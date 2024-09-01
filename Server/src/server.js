@@ -1,22 +1,7 @@
-import express from "express";
-import cors from "cors";
-import cookieparse from "cookie-parser";
+import app from "./app.js"
 
-const app = express()
+const PORT = process.env.PORT || 5000 ;
 
-app.use(express.json());
-
-app.use(cors(
-    {
-        origin:[process.env.FRONTEND_URL],
-        credentials:true
-    }
-));
-
-app.use(cookieparse())
-
-app.use('/ping',(req,res)=>{
-    app.send("Pong");
-});
-
-export default app;
+app.listen(PORT,()=>{
+    console.log(`App is running at http:localhost:${PORT}`)
+})
