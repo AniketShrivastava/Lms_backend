@@ -15,5 +15,4 @@ const connectToDB = async ()=>{
         console.exit(1);
     }
 }
-
-module.exports = connectToDB;
+export default connectToDB;
