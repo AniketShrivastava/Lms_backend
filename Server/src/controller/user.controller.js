@@ -9,7 +9,7 @@ const cookieOption = {
     httpOnly: true
 }
 
-const resgister = asyncHandler(async (req, res, next) => {
+export const resgister = asyncHandler(async (req, res, next) => {
     const { FullName, email, password } = req.body;
 
     if (!FullName || !email || !password) {
@@ -43,7 +43,7 @@ const resgister = asyncHandler(async (req, res, next) => {
     });
 
 });
-const login = asyncHandler(async (req, res) => {
+export const login = asyncHandler(async (req, res) => {
     const { email, password } = req.body
 
     if (!email || !password) {
@@ -69,16 +69,24 @@ const login = asyncHandler(async (req, res) => {
         user,
     });
 });
-const logout = (req, res) => {
+export const logout = asyncHandler( (req, res) => {
+ res.cookie('token',null,{
+    scrure:true,
+    maxAge:0,
+    httpOnly:true
+ });
 
-}
-const getProfile = (req, res) => {
+ res.status(200).json({
+    success:true,
+    message:"User logged out successfully"
+ })
+});
+export const getProfile = asyncHandler( async(req, res) => {
+const user = await User.findById(req.body.id)
 
-}
-
-module.exports = {
-    resgister,
-    login,
-    logout,
-    getProfile
-}
+res.status(200).json({
+    success:true,
+    message:"User details",
+    user
+})
+});
