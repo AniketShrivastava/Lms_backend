@@ -25,7 +25,12 @@ export const resgister = asyncHandler(async (req, res, next) => {
     const user = await User.create({
         FullName,
         email,
-        password
+        password,
+        avatar: {
+      public_id: email,
+      secure_url:
+        'https://res.cloudinary.com/du9jzqlpt/image/upload/v1674647316/avatar_drzgxv.jpg',
+    },
     })
 
     if (!user) {
