@@ -8,8 +8,9 @@ import {
     getProfile
 
 } from "../controller/user.controller.js"
+import upload from "../middleware/multer.middleware.js";
 
-router.post("/register",resgister)
+router.post("/register",upload.single("avatar"),resgister)
 router.post("/login",login)
 router.get("/logout", logout)
 router.get("/me",isLoggedIn, getProfile)
