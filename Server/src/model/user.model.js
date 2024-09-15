@@ -28,18 +28,18 @@ const userSchema = new Schema({
        minLength:[8,"Password must be atleast 8 chracters"],
        selct :false
     },
-    role:{
-      type:String,
-      enum:['USER','ADMIN'],
-      default:'USER'
-    },
     avatar:{
         public_id:{
             type:String
         },
-        secure_id:{
+        secure_url:{
             type:String
         }
+    },
+    role:{
+      type:String,
+      enum:['USER','ADMIN'],
+      default:'USER'
     },
     forgetPasswordToken:String,
     forgetPasswordExpiry:Date

@@ -1,7 +1,9 @@
 import AppError from "../utils/appError.js";
 import User from "../model/user.model.js"
 import asyncHandler from "../middleware/asyncHandler.middleware.js";
-
+import cloudinary from 'cloudinary';
+import fs from "fs"
+import path from "path"
 
 const cookieOption = {
     secure: true,
@@ -11,6 +13,9 @@ const cookieOption = {
 
 export const resgister = asyncHandler(async (req, res, next) => {
     const { FullName, email, password } = req.body;
+    const filepath = req.file.path
+
+    console.log(FullName,email,password,filepath)
 
     if (!FullName || !email || !password) {
         return next(new AppError('All fields are required', 400));
@@ -18,28 +23,71 @@ export const resgister = asyncHandler(async (req, res, next) => {
 
     const userExits = await User.findOne({ email });
 
-    if (!userExits) {
-        return next(new AppError("Email already Exists", 400));
+    if (userExits) {
+        return next(new AppError("Email already Exists", 409));
     }
+
+    // Define avatar as an empty object
+    const avatar = {}; 
 
     const user = await User.create({
         FullName,
         email,
         password,
-        avatar: {
-      public_id: email,
-      secure_url:
-        'https://res.cloudinary.com/du9jzqlpt/image/upload/v1674647316/avatar_drzgxv.jpg',
-    },
-    })
+        avatar:{
+            public_id:email,
+            secure_url:''
+        }
+    });
 
-    if (!user) {
-        return next(new AppError("User registration failed, pleasetry again later", 400));
-    }
 
-    await user.save();
+  // If user not created send message response
+  if (!user) {
+    return next(
+      new AppError('User registration failed, please try again later', 400)
+    );
+  }
 
-    user.password = undefined;
+
+   if(req.file){
+        try {
+         const result = await cloudinary.v2.uploader.upload(req.file.path,{
+                folder:"lms",
+                width:250,
+                height:250,
+                gravity:'faces',
+                crop:"fill"
+            })
+
+            if(result){
+                user.avatar.public_id= result.public_id;
+                user.avatar.secure_url = result.secure_url
+               
+
+
+                fs.unlinkSync(`uploads/${req.file.filename}`)
+            }
+        } catch (error) {
+            return next(
+                new AppError(error || 'File not uploaded, please try again', 500)
+              );
+        }
+   }
+
+     // Save the user object
+  await user.save();
+
+
+    // Generating a JWT token
+  const token = await user.generateJWTToken();
+
+  // Setting the password to undefined so it does not get sent in the response
+
+  user.password = undefined;
+
+  // Setting the token in the cookie with name token along with cookieOptions
+  res.cookie('token', token, cookieOption);
+
 
     res.status(201).json({
         sucess: true,
@@ -48,8 +96,9 @@ export const resgister = asyncHandler(async (req, res, next) => {
     });
 
 });
-export const login = asyncHandler(async (req, res) => {
+export const login = asyncHandler(async (req, res,next) => {
     const { email, password } = req.body
+    console.log(email,password)
 
     if (!email || !password) {
         return next(new AppError('All fields are required', 400))
@@ -87,7 +136,7 @@ export const logout = asyncHandler( (req, res) => {
  })
 });
 export const getProfile = asyncHandler( async(req, res) => {
-const user = await User.findById(req.body.id)
+const user = await User.findById(req.body._id)
 
 res.status(200).json({
     success:true,
