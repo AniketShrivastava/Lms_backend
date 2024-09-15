@@ -4,6 +4,7 @@ import asyncHandler from "../middleware/asyncHandler.middleware.js";
 import cloudinary from 'cloudinary';
 import fs from "fs"
 import path from "path"
+import sendEmail from "../utils/sendEmail.js";
 
 const cookieOption = {
     secure: true,
@@ -144,3 +145,58 @@ res.status(200).json({
     user
 })
 });
+
+export const forgetPassword = asyncHandler(async(req,res,next)=>{
+    const {email}= req.body;
+
+    if(!email){
+        return next(new AppError('Email is required',400))
+    }
+
+    const user = User.findOne({email});
+
+    if(!user){
+        return next(new AppError('Email is not registered',400))
+    }
+
+    const resetToken = await user.generatePasswordResetToken();
+    await user.save();
+
+    const resetPasswordUrl = `${process.env.FRONTEND_URL}/reset-password/${resetToken}`;
+
+    // We here need to send an email to the user with the token
+    const subject = 'Reset Password';
+    const message = `You can reset your password by clicking
+     <a href=${resetPasswordUrl} target="_blank">Reset your password</a>\nIf 
+     the above link does not work for some reason 
+    then copy paste this link in new tab ${resetPasswordUrl}.\n 
+    If you have not requested this, kindly ignore.`;
+
+   try {
+    await sendEmail(email,subject,message);
+
+    res.status(200).json({
+        success:true,
+        message: `Reset password token has been sent to ${email} successfully`,
+
+    });
+   } catch (error) {
+    user.forgetPasswordToken = undefined;
+    user.forgetPasswordExpiry = undefined;
+
+     await user.save();
+     return next(
+        new AppError(
+          error.message || 'Something went wrong, please try again.',
+          500
+        )
+      );
+   }
+   
+
+})
+
+export const resetPassword = asyncHandler((req,res,next)=>{
+
+})
+
