@@ -153,13 +153,17 @@ export const forgetPassword = asyncHandler(async(req,res,next)=>{
         return next(new AppError('Email is required',400))
     }
 
-    const user = User.findOne({email});
+    const user = await User.findOne({email});
+
+    console.log(user)
 
     if(!user){
         return next(new AppError('Email is not registered',400))
     }
 
-    const resetToken = await user.generatePasswordResetToken();
+    const resetToken = await user.generatePasswordResetTokens();
+
+    // console.log(resetPassword)
     await user.save();
 
     const resetPasswordUrl = `${process.env.FRONTEND_URL}/reset-password/${resetToken}`;
@@ -171,6 +175,8 @@ export const forgetPassword = asyncHandler(async(req,res,next)=>{
      the above link does not work for some reason 
     then copy paste this link in new tab ${resetPasswordUrl}.\n 
     If you have not requested this, kindly ignore.`;
+
+    console.log(resetPasswordUrl)
 
    try {
     await sendEmail(email,subject,message);
