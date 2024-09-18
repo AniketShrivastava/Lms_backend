@@ -4,6 +4,7 @@ import asyncHandler from "../middleware/asyncHandler.middleware.js";
 import cloudinary from 'cloudinary';
 import fs from "fs"
 import path from "path"
+import crypto from "crypto"
 import sendEmail from "../utils/sendEmail.js";
 
 const cookieOption = {
@@ -202,7 +203,72 @@ export const forgetPassword = asyncHandler(async(req,res,next)=>{
 
 })
 
-export const resetPassword = asyncHandler((req,res,next)=>{
+export const resetPassword = asyncHandler(async(req,res,next)=>{
+   const {resetToken} = req.params;
+   const {password} = req.body;
 
-})
+   const forgetPasswordToken =  crypto
+   .createHash('sha256')
+   .update(resetToken)
+   .digest('hex')
+
+   if(!password){
+    return next(new AppError('Password is required',400))
+   }
+
+  const user = await User.findOne({
+    forgetPasswordToken,
+    forgetPasswordExpiry:{$gt:Date.now()},
+   })
+
+   if(!user){
+    return next(new AppError('Token is invalid or expired, please try again',400))
+   }
+   user.password = password;
+
+   user.forgetPasswordToken= undefined;
+   user.forgetPasswordExpiry = undefined;
+
+   await user.save();
+
+   res.status(200).json({
+    success:true,
+    message:"Password change successfully"
+   });
+
+});
+
+export const changePassword = asyncHandler(async(req,res,next)=>{
+    const {oldPassword,newPassword}= req.body;
+    const {id}= req.user;
+
+    // Check if the values are there or not
+  if (!oldPassword || !newPassword) {
+    return next(
+      new AppError('Old password and new password are required', 400)
+    );
+  }
+ const user = await User.findById(id).select('+password');
+
+ if(!user){
+    return next(new AppError('Invalid user id or user does not exist', 400))
+ }
+
+ const isPasswordValid = await user.comparePassword(oldPassword);
+
+ if (!isPasswordValid) {
+    return next(new AppError('Invalid old password', 400));
+  }
+
+  user.password = newPassword;
+
+  await user.save();
+
+  user.password = undefined;
+
+  res.status(200).json({
+    success:true,
+    message:'Password change successfully'
+  });
+});
 
