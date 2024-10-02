@@ -10,8 +10,8 @@ function Notfound() {
             </div>
 
             <button className="mt-5">
-                <a onClick={()=> navigate(-1)} href="" className="relative inline-block text-sm font-medium text-[#FF6A3D] active:text-yellow-500focus:outline-none focus:ring ">
-                    <span  className="relative block px-8 py-3 bg-[#1A2238] border border-current">
+                <a className="relative inline-block text-sm font-medium text-[#FF6A3D] group active:text-yellow-500 focus:outline-none focus:ring ">
+                    <span onClick={()=> navigate(-1)} className="relative block px-8 py-3 bg-[#1A2238] border border-current">
                         Go Back
                     </span>
                 </a>
